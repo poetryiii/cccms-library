@@ -16,7 +16,7 @@ class CrontabService extends Service
     public function __construct(App $app)
     {
         parent::__construct($app);
-        $this->baseUri = config('crontab.base_uri') ?: 'http://127.0.0.1:2346';
+        $this->baseUri = config('crontab.base_uri') ?: 'http://127.0.0.1:2345';
         $this->safeKey = config('crontab.safe_key') ?: null;
     }
 

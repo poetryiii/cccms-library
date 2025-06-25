@@ -10,7 +10,7 @@ return [
     //定时器安全秘钥
     'safe_key' => env('safe_key', 'Q85gb1ncuWDsZTVoAEvymrNHhaRtp73M'),
     //定时器请求地址
-    'base_url' => env('base_url', 'http://127.0.0.1:2346'),
+    'base_url' => env('base_url', 'http://127.0.0.1:2345'),
     // 数据表
     'table'    => [
         // 任务表
