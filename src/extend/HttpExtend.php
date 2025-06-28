@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace cccms\extend;
@@ -93,7 +94,11 @@ class HttpExtend
         }
         // Header 头信息设置
         if (!empty($options['headers'])) {
-            curl_setopt($curl, CURLOPT_HTTPHEADER, $options['headers']);
+            $headers = [];
+            foreach ($options['headers'] as $key => $value) {
+                $headers[] = "$key: $value";
+            }
+            curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
         }
         if (!empty($options['cookie_file'])) {
             curl_setopt($curl, CURLOPT_COOKIEJAR, $options['cookie_file']);
