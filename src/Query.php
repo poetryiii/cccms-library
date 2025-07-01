@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace cccms;
@@ -43,7 +44,7 @@ class Query extends \think\db\Query
                 if (is_string($listRows['recycle'])) {
                     $listRows['recycle'] = $listRows['recycle'] == 'true';
                 }
-                if ($listRows['recycle']) $data = $data->onlyTrashed();
+                if ($listRows['recycle']) $data = $data->where('delete_time', '<>', '1900-01-01 00:00:00');
             }
             if (is_string($data) || is_numeric($data)) {
                 $result = $that->allowEmpty()->find($data);
@@ -78,7 +79,7 @@ class Query extends \think\db\Query
                 if (is_string($params['recycle'])) {
                     $params['recycle'] = $params['recycle'] == 'true';
                 }
-                if ($params['recycle']) $data = $data->onlyTrashed();
+                if ($params['recycle']) $data = $data->where('delete_time', '<>', '1900-01-01 00:00:00');
             }
             $data = $data->select();
             if (is_callable($callable)) {
@@ -108,7 +109,7 @@ class Query extends \think\db\Query
                 if (is_string($listRows['recycle'])) {
                     $listRows['recycle'] = $listRows['recycle'] == 'true';
                 }
-                if ($listRows['recycle']) $data = $data->onlyTrashed();
+                if ($listRows['recycle']) $data = $data->where('delete_time', '<>', '1900-01-01 00:00:00');
             }
             $data = $data->paginate([
                 'list_rows' => $listRows['limit'] ?? 15,
