@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace cccms\extend;
@@ -87,6 +88,70 @@ class ArrExtend
         $list = array_column($array, $field);
         array_multisort($list, $sort, $array);
         return $array;
+    }
+
+    /**
+     * 多层树形/多维数组按字段排序（支持点语法）
+     *
+     * @param array  $array      源数组
+     * @param string $fieldPath  字段路径，例：a.b.c
+     * @param string $sort       asc | desc
+     * @param bool   $keepKeys   是否保留原始键名
+     * @param bool   $strict     true=缺字段的放最后；false=缺字段的放最前
+     * @return array
+     */
+    public static function toSortPath(
+        array  $array,
+        string $fieldPath = '',
+        string $sort      = 'desc',
+        bool   $keepKeys  = false,
+        bool   $strict    = true
+    ): array {
+
+        if ($fieldPath === '') {
+            return $array;
+        }
+
+        // 1. 把路径拆成数组
+        $keys = explode('.', $fieldPath);
+
+        // 2. 取出排序用的值
+        $values = [];
+        foreach ($array as $k => $item) {
+            $v = $item;
+            foreach ($keys as $key) {
+                if (!is_array($v) || !array_key_exists($key, $v)) {
+                    $v = null;          // 字段不存在
+                    break;
+                }
+                $v = $v[$key];
+            }
+            $values[$k] = $v;
+        }
+
+        // 3. 排序
+        $sortFlag = ($sort === 'asc') ? SORT_ASC : SORT_DESC;
+        if ($keepKeys) {
+            array_multisort($values, $sortFlag, SORT_REGULAR, $array);
+        } else {
+            array_multisort($values, $sortFlag, SORT_REGULAR, array_values($array));
+            $array = array_values($array);
+        }
+
+        // 4. 把 null 值挪到末尾（或开头）——修复点
+        $nulls = [];
+        $valid = [];
+        foreach ($array as $k => $item) {
+            if ($values[$k] === null) {
+                $nulls[$k] = $item;
+            } else {
+                $valid[$k] = $item;
+            }
+        }
+        $array = $strict ? array_merge($valid, $nulls) : array_merge($nulls, $valid);
+
+        // 如果不需要保留键名，再重置一次
+        return $keepKeys ? $array : array_values($array);
     }
 
     /**
