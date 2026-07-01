@@ -19,7 +19,7 @@ class SysUser extends Model
 
     protected string $dataAuthField = 'id';
 
-    protected $globalScope = ['userDataAuth'];
+    protected $globalScope = ['commonAuth'];
 
     // 写入后
     public static function onAfterWrite($model): void

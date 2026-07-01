@@ -4,10 +4,33 @@ declare(strict_types=1);
 namespace cccms\services;
 
 use cccms\Service;
-use cccms\extend\StrExtend;
+use cccms\model\SysDataAuth;
 
 class DataService extends Service
 {
+    /** 供前端选择的条件操作符列表 */
+    public function getOperatorList(): array
+    {
+        return [
+            'eq'            => '等于(=)',
+            'neq'           => '不等于(<>)',
+            'gt'            => '大于(>)',
+            'egt'           => '大于等于(>=)',
+            'lt'            => '小于(<)',
+            'elt'           => '小于等于(<=)',
+            'in'            => '在范围内(IN)',
+            'not_in'        => '不在范围内(NOT IN)',
+            'between'       => '在区间内(BETWEEN)',
+            'not_between'   => '不在区间内(NOT BETWEEN)',
+            'null'          => '为NULL',
+            'not_null'      => '不为NULL',
+            'empty_string'  => '为空字符串',
+            'not_empty_string' => '不为空字符串',
+            'left_like'     => '左模糊(%x)',
+            'right_like'    => '右模糊(x%)',
+            'all_like'      => '全模糊(%x%)',
+        ];
+    }
     /**
      * 获取条件映射
      * @param string $where
@@ -69,51 +92,52 @@ class DataService extends Service
     }
 
     /**
-     * 获取用户数据范围
-     * @param string $table 表名
-     * @return array
+     * 获取用户在指定表上的字段级权限
+     * 数据源：sys_data_auth 表，按角色/部门/岗位/用户四个维度绑定
+     * @param string $table 表名（Model::$name）
+     * @return array ['withoutField' => [...], 'readOnly' => [...]]
      */
     public function getUserData(string $table = ''): array
     {
-        // $tableName = StrExtend::humpToUnderline($table);
-        // $data = [
-        //     'fields' => [], // 字段
-        //     'withoutField' => [], // 排除字段
-        //     'maskShow' => [], // 掩码显示
-        //     'readOnly' => [], // 只读
-        //     'whereAndMap' => [], // 并且条件
-        //     'whereOrMap' => [], // 或者条件
-        // ];
-        // $userData = UserService::instance()->getUserAuths();
-        // foreach ($userData as $d) {
-        //     if ($d['table_name'] !== $tableName) continue;
-        //     if (empty($d['field'])) continue;
-        //     // 掩码显示需要字段
-        //     if ($d['where'] == 'mask_show') $data['maskShow'][$d['field']] = 0;
-        //     // 只读也需要字段
-        //     if ($d['where'] == 'read_only') $data['readOnly'][$d['field']] = 0;
-        //     if ($d['where'] == 'hidden') {
-        //         $data['withoutField'][$d['field']] = 0;
-        //     } else {
-        //         $data['fields'][$d['field']] = 0;
-        //     }
-        //     if (empty($d['where'])) continue;
-        //     if (empty($where = $this->handleWhere($d['field'], $d['where'], $d['value']))) continue;
-        //     $whereKey = md5($d['field'] . $d['where'] . $d['value']);
-        //     if ($d['logical'] == 1) {
-        //         $data['whereOrMap'][$whereKey] = $where;
-        //     } elseif ($d['logical'] == 2) {
-        //         $data['whereAndMap'][$whereKey] = $where;
-        //     }
-        //     // 访问控制 logical = 3 or 4 -待实现
-        // }
-        // return [
-        //     'fields' => array_keys($data['fields']),
-        //     'withoutField' => array_keys($data['withoutField']),
-        //     'maskShow' => array_keys($data['maskShow']),
-        //     'readOnly' => array_keys($data['readOnly']),
-        //     'whereAndMap' => array_filter(array_values($data['whereAndMap'])),
-        //     'whereOrMap' => array_filter(array_values($data['whereOrMap']))
-        // ];
+        if (empty($table)) return [];
+
+        $rules = SysDataAuth::mk()->getUserRules($table);
+        if (empty($rules)) return [];
+
+        $hidden   = [];
+        $readonly = [];
+        $maskShow = [];
+        $whereAnd = [];
+
+        // priority 升序，先到先占位
+        foreach ($rules as $rule) {
+            $f = $rule['field'];
+            switch ($rule['rule_type']) {
+                case 'hidden':
+                    if (!isset($hidden[$f])) $hidden[$f] = 0;
+                    break;
+                case 'readonly':
+                    if (!isset($readonly[$f])) $readonly[$f] = 0;
+                    break;
+                case 'mask_show':
+                    if (!isset($maskShow[$f])) $maskShow[$f] = 0;
+                    break;
+                case 'condition':
+                    if (!empty($rule['rule_operator'])) {
+                        $cond = $this->handleWhere($f, $rule['rule_operator'], $rule['rule_value'] ?? '');
+                        if ($cond) $whereAnd[md5(serialize($cond))] = $cond;
+                    }
+                    break;
+            }
+        }
+
+        return [
+            'fields'       => [],
+            'withoutField'  => array_keys($hidden),
+            'readOnly'      => array_keys($readonly),
+            'maskShow'      => array_keys($maskShow),
+            'whereAndMap'   => array_values($whereAnd),
+            'whereOrMap'    => [],
+        ];
     }
 }

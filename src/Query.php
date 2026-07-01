@@ -40,11 +40,14 @@ class Query extends \think\db\Query
     {
         try {
             $that = $this;
-            if (isset($listRows['recycle'])) {
-                if (is_string($listRows['recycle'])) {
-                    $listRows['recycle'] = $listRows['recycle'] == 'true';
+            if (is_array($data) && isset($data['recycle'])) {
+                if (is_string($data['recycle'])) {
+                    $data['recycle'] = $data['recycle'] == 'true';
                 }
-                if ($listRows['recycle']) $data = $data->where('delete_time', '<>', '1900-01-01 00:00:00');
+                if ($data['recycle']) {
+                    $that = $that->where('delete_time', '<>', '1900-01-01 00:00:00');
+                }
+                unset($data['recycle'], $data['page'], $data['limit']);
             }
             if (is_string($data) || is_numeric($data)) {
                 $result = $that->allowEmpty()->find($data);

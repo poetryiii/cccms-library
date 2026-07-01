@@ -70,8 +70,9 @@ class LocalStorage extends Storage
     public function delete($folderOrCateId = 0): bool
     {
         if (is_string($folderOrCateId)) {
-            // 替换..防止跨目录删除
-            $filePath = $this->getLocalPath() . strtr($folderOrCateId, '..', '');
+            // 使用basename + 规范化路径，防止跨目录删除
+            $safeName = basename(str_replace('\\', '/', $folderOrCateId));
+            $filePath = $this->getLocalPath() . $safeName;
         } else {
             if (empty($folderOrCateId)) return false;
             $fileInfo = $this->model->findOrEmpty($folderOrCateId);
@@ -81,8 +82,14 @@ class LocalStorage extends Storage
             // 磁盘文件路径
             $filePath = $this->getLocalPath() . $fileInfo['file_path'];
         }
+        // 路径安全校验：确保文件在允许的目录范围内
+        $realPath = realpath($filePath);
+        $realBasePath = realpath($this->getLocalPath());
+        if ($realPath === false || $realBasePath === false || !str_starts_with($realPath, $realBasePath)) {
+            return false;
+        }
         // 判断附件是否在磁盘中
-        if (file_exists($filePath) && !unlink($filePath)) {
+        if (file_exists($realPath) && !unlink($realPath)) {
             return false;
         }
         return true;

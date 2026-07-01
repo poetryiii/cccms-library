@@ -42,7 +42,7 @@ abstract class Base extends stdClass
         // 控制器初始化
         $this->init();
 
-        // 权限拦截
+        // 权限拦截（在控制器构造阶段执行，此时路由已分发，节点信息可用）
         $this->auth_check();
     }
 

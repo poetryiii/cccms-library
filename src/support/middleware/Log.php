@@ -5,6 +5,7 @@ namespace cccms\support\middleware;
 
 use Closure;
 use think\{Request, Response};
+use think\response\View;
 use cccms\model\{SysLog, SysLogInfo};
 use cccms\services\{NodeService, ConfigService, UserService};
 
@@ -55,9 +56,9 @@ class Log
     {
         // 回调行为
         if (!empty($this->logData) && $this->logInfoData['log_id'] == 0) {
-            if (get_class($response) === 'think\response\View') {
+            if ($response instanceof View) {
                 $this->logInfoData['req_result'] = $response->getVars();
-            } elseif (method_exists(Response::class, 'getData')) {
+            } elseif (method_exists($response, 'getData')) {
                 $this->logInfoData['req_result'] = $response->getData();
             }
             // 记录修改信息

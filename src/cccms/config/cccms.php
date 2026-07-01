@@ -20,5 +20,15 @@ return [
     'storage' => [
         // 附件访问路由配置
         'routePath' => '/file/<code>'
+    ],
+    'crontab' => [
+        // 定时任务动态执行白名单（格式: "完整类名@方法名"）
+        'allow_commands' => [
+            // 'app\\crontab\\Task@cleanLogs',
+        ],
+        // 命名空间白名单，允许该命名空间下所有类方法被动态执行
+        'allow_namespaces' => [
+            // 'app\\crontab\\',
+        ],
     ]
 ];

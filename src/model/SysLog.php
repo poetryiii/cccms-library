@@ -8,6 +8,8 @@ use think\model\relation\HasOne;
 
 class SysLog extends Model
 {
+    protected $globalScope = ['commonAuth'];
+
     protected $hidden = ['user'];
 
     public function user(): HasOne

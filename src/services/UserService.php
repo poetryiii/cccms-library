@@ -6,7 +6,7 @@ namespace cccms\services;
 
 use cccms\Service;
 use cccms\extend\JwtExtend;
-use cccms\model\{SysDept, SysRoleNode, SysUserDept};
+use cccms\model\{SysDept, SysRoleNode, SysUserDept, SysUserRole, SysDeptRole};
 
 class UserService extends Service
 {
@@ -86,10 +86,10 @@ class UserService extends Service
     {
         if (static::isAdmin($user_id)) return NodeService::getNodes();
         $user_id = $user_id ?: static::getUserId();
-        $data = static::$app->cache->get('SysUserAuth_' . $user_id, []);
+        $data = static::instance()->app->cache->get('SysUserAuth_' . $user_id, []);
         if (empty($data)) {
             $data = SysRoleNode::mk()->getUserNodes($user_id);
-            static::$app->cache->set('SysUserAuth_' . $user_id, $data);
+            static::instance()->app->cache->set('SysUserAuth_' . $user_id, $data);
         }
         return array_keys(NodeService::instance()->setFrameNodes($data));
     }
@@ -137,5 +137,20 @@ class UserService extends Service
         $user_id = $user_id ?: static::getUserId();
         $dept = static::getUserDept($user_id, $isNodeAuth);
         return array_column($dept, 'id');
+    }
+
+    /**
+     * 获取用户的所有角色ID（直连分配 + 部门继承）
+     */
+    public static function getUserRoleIds(int $user_id = 0): array
+    {
+        if (static::isAdmin($user_id)) return [];
+        $userId = $user_id ?: static::getUserId();
+
+        $direct = SysUserRole::mk()->where('user_id', $userId)->column('role_id');
+        $deptIds = static::getUserDeptIds($userId);
+        $dept = empty($deptIds) ? [] : SysDeptRole::mk()->where('dept_id', 'in', $deptIds)->column('role_id');
+
+        return array_values(array_unique(array_merge($direct, $dept)));
     }
 }

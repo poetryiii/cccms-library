@@ -15,12 +15,12 @@ abstract class Service
      * 应用实例
      * @var App
      */
-    protected static App $app;
+    protected App $app;
 
     /**
      * @var Request
      */
-    protected static Request $request;
+    protected Request $request;
 
     /**
      * Service constructor.
@@ -28,8 +28,8 @@ abstract class Service
      */
     public function __construct(App $app)
     {
-        static::$app = $app;
-        static::$request = $app->request;
+        $this->app = $app;
+        $this->request = $app->request;
         static::initialize();
     }
 
@@ -46,7 +46,7 @@ abstract class Service
      * @param boolean $new 创建新实例
      * @return static
      */
-    public static function instance(array $var = [], bool $new = false): Service
+    public static function instance(array $var = [], bool $new = false): static
     {
         return Container::getInstance()->make(static::class, $var, $new);
     }

@@ -89,11 +89,18 @@ abstract class Storage
         $diskPath = ConfigService::instance()->getConfig('storage.diskType', 'local');
         if ($diskPath === 'local') $diskPath = $this->getLocalPath();
         $diskPath = str_replace(['\\', '//'], ['/', '/'], $diskPath . '/' . $file['file_path']);
-        // 判断附件是否在磁盘中
-        if (!$resFile = @readfile($diskPath)) {
+        // 路径安全校验：防止目录穿越攻击
+        $realPath = realpath($diskPath);
+        $realBasePath = realpath($this->getLocalPath());
+        if ($realPath === false || $realBasePath === false || !str_starts_with($realPath, $realBasePath)) {
+            _result(['code' => 403, 'msg' => '非法文件路径'], _getEnCode());
+        }
+        // 使用 file_get_contents 替代 readfile，确保 Header 在输出前正确设置
+        $fileContent = @file_get_contents($realPath);
+        if ($fileContent === false) {
             _result(['code' => 404, 'msg' => '无法访问附件'], _getEnCode());
         }
-        _result(['code' => 200, 'msg' => 'success', 'data' => $resFile], 'view', [
+        _result(['code' => 200, 'msg' => 'success', 'data' => $fileContent], 'view', [
             'Content-Type' => $file['file_mime'] . ';',
             'Content-Disposition' => 'filename=' . urlencode($file['file_name']),
         ]);

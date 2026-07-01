@@ -17,7 +17,8 @@ class NodeService extends Service
      */
     protected static function getFrameNodes(): array
     {
-        $data = static::$app->cache->get('SysFrameNodes') ?? [];
+        $instance = static::instance();
+        $data = $instance->app->cache->get('SysFrameNodes') ?? [];
         if (empty($data)) {
             $data = static::getNodesInfo();
             foreach ($data as $key => $val) {
@@ -25,7 +26,7 @@ class NodeService extends Service
                     unset($data[$key]);
                 }
             }
-            static::$app->cache->set('SysFrameNodes', $data);
+            $instance->app->cache->set('SysFrameNodes', $data);
         }
         return $data;
     }
@@ -71,10 +72,11 @@ class NodeService extends Service
      */
     public static function getNodes(): array
     {
-        $data = static::$app->cache->get('SysNodes', []);
+        $instance = static::instance();
+        $data = $instance->app->cache->get('SysNodes', []);
         if (empty($data)) {
             $data = array_keys(static::getNodesInfo());
-            static::$app->cache->set('SysNodes', $data);
+            $instance->app->cache->set('SysNodes', $data);
         }
         return $data;
     }
@@ -85,14 +87,15 @@ class NodeService extends Service
      */
     public static function getAuthNodes(): array
     {
-        $data = static::$app->cache->get('SysAuthNodes', []);
+        $instance = static::instance();
+        $data = $instance->app->cache->get('SysAuthNodes', []);
         if (empty($data)) {
             [$data, $nodes] = [[], static::getNodesInfo()];
             foreach ($nodes as $node) {
                 if ($node['auth'] ?? false) $data[] = $node['currentNode'];
             }
             $data = static::setFrameNodes($data);
-            static::$app->cache->set('SysAuthNodes', $data);
+            $instance->app->cache->set('SysAuthNodes', $data);
         }
         return $data;
     }
@@ -103,10 +106,11 @@ class NodeService extends Service
      */
     public static function getAuthNodesTree(): array
     {
-        $data = static::$app->cache->get('SysAuthNodesTree', []);
+        $instance = static::instance();
+        $data = $instance->app->cache->get('SysAuthNodesTree', []);
         if (empty($data)) {
             $data = ArrExtend::toTreeArray(static::getAuthNodes(), 'currentNode', 'parentNode');
-            static::$app->cache->set('SysAuthNodesTree', $data);
+            $instance->app->cache->set('SysAuthNodesTree', $data);
         }
         return $data;
     }
@@ -142,12 +146,13 @@ class NodeService extends Service
      */
     public static function getNodesInfo(array $toScanFileArray = [], bool $isCache = false): array
     {
-        $data = static::$app->cache->get('SysNodesInfo', []);
+        $instance = static::instance();
+        $data = $instance->app->cache->get('SysNodesInfo', []);
         if ($isCache || empty($data)) {
             // 访问控制器层名称
-            $controller_layer = static::$app->config->get('route.controller_layer');
+            $controller_layer = $instance->app->config->get('route.controller_layer');
             if (empty($toScanFileArray)) {
-                $rootPath = static::$app->getRootPath();
+                $rootPath = $instance->app->getRootPath();
                 // 这里扫描文件路径需要独立出来 有可能会有其他应用扩展
                 $toScanFileArray = array_merge(
                     BaseService::instance()->scanDirArray($rootPath . 'vendor/poetry/cccms-app/src/*/' . $controller_layer . '/*'),
@@ -165,7 +170,7 @@ class NodeService extends Service
                 $title = $appNames[$appName] ?? $appName;
                 $data[$appName] = ['title' => $title, 'sort' => 0, 'currentNode' => $appName, 'parentNode' => '#', 'parentTitle' => '#'];
                 // 默认命名空间
-                $namespace = static::$app->config->get('app.app_namespace') ?: 'app';
+                $namespace = $instance->app->config->get('app.app_namespace') ?: 'app';
                 // 类全名
                 $classFullName = $namespace . '\\' . $appName . '\\controller\\' . strtr($className, '/', '\\');
                 if (!class_exists($classFullName)) continue;
@@ -199,7 +204,7 @@ class NodeService extends Service
             }
             $data = array_change_key_case($data);
             $data = ArrExtend::toSort($data, 'sort');
-            static::$app->cache->set('SysNodesInfo', $data);
+            $instance->app->cache->set('SysNodesInfo', $data);
         }
         return $data;
     }

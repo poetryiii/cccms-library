@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace cccms\services;
 
 use Exception;
+use think\App;
 use cccms\Service;
 use cccms\extend\{JwtExtend, StrExtend};
 
@@ -55,11 +56,12 @@ class CaptchaService extends Service
     protected $matchCase = true;
 
     /**
-     * 架构方法 设置参数
+     * 构造方法 设置参数
      * @access public
      */
-    public function __construct()
+    public function __construct(App $app)
     {
+        parent::__construct($app);
         $config = ConfigService::instance()->getConfig('captcha', []);
         foreach ($config as $key => $val) {
             if (property_exists($this, $key)) $this->{$key} = $val;
